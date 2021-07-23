@@ -1,0 +1,98 @@
+---
+- name: Setup docker on managed node
+  hosts: all
+  tasks:
+  - name: Configure docker repo
+    yum_repository:
+      name: docker
+      description: Yum repo for docker
+      baseurl: https://download.docker.com/linux/centos/7/x86_64/stable/
+      gpgcheck: no
+  - name: Install docker
+    command: yum install docker-ce --nobest -y
+
+  - name: Install python3
+    package:
+      name: python3
+      state: present
+
+  - name: Install docker SDK
+    pip:
+      name: docker-py
+
+  - name: Start and enable docker service
+    service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Pull docker image
+    docker_image:
+      name: httpd
+      source: pull
+
+  - name: Create workspace directory
+    file:
+      path: /root/Task10/web
+      state: directory
+      
+  - name: Copy webpage content
+    copy:
+      content: "<h1>This webpage is configured inside a docker container deployed using Ansible.</h1>"
+      dest: /root/Task10/web/index.html
+
+  - name: Allow port through firewall
+    firewalld:
+      port: 8081/tcp
+      permanent: yes
+      immediate: yes
+      state: enabled
+
+  - name: Run a docker container
+    docker_container:
+      name: webos
+      image: httpd
+      state: started
+      exposed_ports:
+      - 80/tcp
+      published_ports:
+          service:
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: Pull docker image
+    docker_image:
+      name: httpd
+      source: pull
+
+  - name: Create workspace directory
+    file:
+      path: /root/Task10/web
+      state: directory
+
+  - name: Copy webpage content
+    copy:
+      content: "<h1>This webpage is configured inside a docker container deployed using Ansible.</h1>"
+      dest: /root/Task10/web/index.html
+
+  - name: Allow port through firewall
+    firewalld:
+      port: 8081/tcp
+      permanent: yes
+      immediate: yes
+      state: enabled
+
+  - name: Run a docker container
+    docker_container:
+      name: webos
+      image: httpd
+      state: started
+      exposed_ports:
+      - 80/tcp
+      published_ports:
+      - 0.0.0.0:8081:80/tcp
+- 0.0.0.0:8081:80/tcp
+      volumes:
+      - /root/Task10/web/:/usr/local/apache2/htdocs/
+  
